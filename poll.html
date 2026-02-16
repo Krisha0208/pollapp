@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Poll</title>
+</head>
+<body>
+
+<h2 id="question">Loading...</h2>
+
+<button onclick="vote('yes')">Yes</button>
+<button onclick="vote('no')">No</button>
+
+<h3>Results:</h3>
+<p>Yes: <span id="yesCount">0</span></p>
+<p>No: <span id="noCount">0</span></p>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+
+const socket = io();
+
+const urlParams = new URLSearchParams(window.location.search);
+const pollId = urlParams.get("id");
+
+let voterId = localStorage.getItem("voterId");
+if (!voterId) {
+    voterId = Math.random().toString(36).substring(2);
+    localStorage.setItem("voterId", voterId);
+}
+
+// Load Poll
+async function loadPoll() {
+    const res = await fetch(`/poll/${pollId}`);
+    const data = await res.json();
+
+    if (!data || !data.options) {
+        document.body.innerHTML = "<h2>Poll not found</h2>";
+        return;
+    }
+
+    document.getElementById("question").innerText = data.question;
+    document.getElementById("yesCount").innerText = data.options.yes || 0;
+    document.getElementById("noCount").innerText = data.options.no || 0;
+}
+
+loadPoll();
+
+// Vote
+async function vote(option) {
+    try {
+        const res = await fetch("/vote", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pollId, option, voterId })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.message);
+            return;
+        }
+
+    } catch (err) {
+        alert("Error voting");
+    }
+}
+
+// Real-time update
+socket.on("voteUpdate", (data) => {
+    if (data.pollId === pollId) {
+        document.getElementById("yesCount").innerText = data.options.yes || 0;
+        document.getElementById("noCount").innerText = data.options.no || 0;
+    }
+});
+
+</script>
+
+</body>
+</html>

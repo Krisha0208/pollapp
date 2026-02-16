@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Poll</title>
+</head>
+<body>
+
+<h2>Create a Poll</h2>
+
+<input type="text" id="question" placeholder="Enter your question">
+<button onclick="createPoll()">Create Poll</button>
+
+<p id="link"></p>
+
+<script>
+
+async function createPoll() {
+    const question = document.getElementById("question").value;
+
+    const res = await fetch("/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        alert(data.message);
+        return;
+    }
+
+    const pollLink = `${window.location.origin}/poll.html?id=${data.pollId}`;
+
+    document.getElementById("link").innerHTML =
+        `<a href="${pollLink}" target="_blank">${pollLink}</a>`;
+}
+
+</script>
+
+</body>
+</html>
